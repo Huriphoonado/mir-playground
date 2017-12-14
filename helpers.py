@@ -189,3 +189,15 @@ def keep_some_frames(track_dict, to_remove):
     track_dict['features'] = np.array([features[i] for i in i_to_keep])
 
     return track_dict
+
+
+def input_string(prompt_type, options_dict):
+    '''
+        Creates a string for user input
+    '''
+    i_string = 'Please choose a(n) ' + prompt_type + ' mode: \n'
+    for k, v in options_dict.items():
+        i_string += str(k) + ': ' + v + '\n'
+    i_string += 'Your (integer) choice: '
+
+    return i_string

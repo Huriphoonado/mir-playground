@@ -1,5 +1,8 @@
 # Possible Feature Representations to convert input audio
 
+# TODO - Figure out how to make final_steps a higher order function to
+# reduce code duplication for functions below that have the same steps (stft)
+
 # ----------------- Imports
 import numpy as np
 import librosa
@@ -23,7 +26,12 @@ def with_stft(y):
 
 
 def with_cube_root(y):
-    return final_steps(np.cbrt(with_stft(y)))
+    s_array = librosa.stft(y, n_fft=n_fft, hop_length=hop_length,
+                           win_length=win_length, window=window)
+
+    abs_s = np.absolute(s_array)
+    cbrt = np.cbrt(abs_s)
+    return final_steps(cbrt)
 
 
 def final_steps(s):
@@ -44,10 +52,22 @@ def final_steps(s):
 
 
 # ----------------- Function Generator
-def transform(type):
+def generate_transform(type):
+    '''
+        Returns the right transform function based on the string inputted
+        If the string 'options' is inputted, it will return a dict containing
+        modes rather than a function
+        Input: String containing ['options' | 'voicing' | 'melody' | 'all']
+        Output: Either:
+            Transform function corresponding to input
+            Dict containing possible transformation functions for user input
+    '''
     transformations = {
         'stft': with_stft,
         'cube_root': with_cube_root
     }
 
-    return transformations[type]
+    if type == 'options':
+        return {i: k for i, k in enumerate(transformations)}
+    else:
+        return transformations[type]

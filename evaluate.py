@@ -101,7 +101,7 @@ def evaluate_model_all(test_guesses, test_labels):
 def generate_eval(mode):
     '''
         Returns the right evaluation function based on the string inputted
-        Input: String containing ['voicing' | 'melody' | 'all']
+        Input: String containing ['options' | 'voicing' | 'melody' | 'all']
         Output: Evaluation function corresponding to input
     '''
     evaluations = {
@@ -110,4 +110,7 @@ def generate_eval(mode):
         'all': evaluate_model_all
     }
 
-    return evaluations[mode]
+    if mode == 'options':
+        return {i: k for i, k in enumerate(evaluations)}
+    else:
+        return evaluations[mode]

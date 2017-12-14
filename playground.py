@@ -1,6 +1,13 @@
 # Willie Payne
 # Run Command: python3 playground.py
 
+# TODO
+# Implement CLI
+#   List Feature for generator functions
+# Add other functions to features.py and test
+# Implement
+# Check if voicing overall evaluation is actually accurate
+
 # ----------------- Imports
 from multiprocessing import Pool  # For parallel processing
 
@@ -21,10 +28,34 @@ import evaluate  # Final step evaluation functions
 
 # ----------------- Global Variables
 num_processes = 4  # Number of parallel processes for supported code blocks
-global_mode = 'melody'  # ['voicing' | 'melody' | 'all']
+e_mode = 'voicing'  # Evaluation mode
+n_mode = 'stft'  # Type of Feature transformation to use
+s_mode = 'quick'  # Type of train/test/validate split to use
 
 
 # ----------------- Functions
+def get_started():
+    global e_mode  # Only time global keyword is used since these
+    global n_mode
+    global s_mode
+
+    e_options = evaluate.generate_eval('options')
+    n_options = features.generate_transform('options')
+    s_options = split.generate_split('options')
+
+    e_choice = input(hr.input_string('evaluation', e_options))
+    n_choice = input(hr.input_string('feature', n_options))
+    s_choice = input(hr.input_string('split', s_options))
+
+    try:
+        e_mode = e_options.get(int(e_choice), 'voicing')
+        n_mode = n_options.get(int(n_choice), 'stft')
+        s_mode = s_options.get(int(s_choice), 'quick')
+    except:
+        print('Oops, you must have typed something weird. Try running again.')
+        quit()
+
+
 def normalize_all(n_func, train_or_test):
     '''
         Iterates through all provided data and normalizes each mtrack
@@ -76,7 +107,7 @@ def load_and_normalize(n_func, mtrack):
             print(t_id, 'features has size:', len(normalized))
             quit()
 
-    if global_mode == 'voicing':
+    if e_mode == 'voicing':
         annotation = np.array([int(bool(v)) for v in annotation])
     else:
         annotation = hr.hz_to_note_zeros(annotation)
@@ -144,9 +175,10 @@ def predict(clf, all_test_data):
 
 # ----------------- Main Function
 def main():
-    n_func = features.transform('stft')  # Choose your weapon!
-    s_func = split.generate_split('quick')
-    e_func = evaluate.generate_eval(global_mode)
+    get_started()  # Choose your weapon!
+    e_func = evaluate.generate_eval(e_mode)
+    n_func = features.generate_transform(n_mode)
+    s_func = split.generate_split(s_mode)
 
     print('Splitting Train and Test Sets..........', end='')
     train, test = s_func()
@@ -157,7 +189,7 @@ def main():
     to_remove, train_counts = hr.common_pitches(all_training_data, 50)
     print('Extracting Training Features..........Done')
 
-    if global_mode == 'melody':
+    if e_mode == 'melody':
         print('Removing Unvoiced Frames From Train..........', end='')
         all_training_data = only_voiced_frames(all_training_data, to_remove)
         print('Done')
@@ -172,7 +204,7 @@ def main():
     all_test_data = normalize_all(n_func, test)
     print('Extracting Test Features..........Done')
 
-    if global_mode == 'melody':
+    if e_mode == 'melody':
         print('Removing Unvoiced Frames From Test..........', end='')
         all_test_data = only_voiced_frames(all_test_data)
         print('Done')
@@ -182,7 +214,7 @@ def main():
     print('Done')
 
     print('Exporting Predictions..........', end='')
-    exporter.predictions(all_test_data, global_mode)
+    exporter.predictions(all_test_data, e_mode)
     print('Done')
 
     print('Evaluating Results..........')

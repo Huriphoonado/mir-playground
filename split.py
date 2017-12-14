@@ -103,8 +103,10 @@ def make_test_data():
 # ----------------- Generator Function
 def generate_split(split_type):
     '''
-        Returns the right evaluation function based on the string inputted
-        Input: String containing ['voicing' | 'melody' | 'all']
+        Returns the right split function based on the string inputted
+        If the string 'options' is inputted, it will return a dict containing
+        modes rather than a function
+        Input: String containing ['options' | 'voicing' | 'melody' | 'all']
         Output: Evaluation function corresponding to input
     '''
     splits_dict = {
@@ -112,4 +114,8 @@ def generate_split(split_type):
         'validate': validation_mode,
         'test': test_mode
     }
-    return splits_dict[split_type]
+
+    if split_type == 'options':
+        return {i: k for i, k in enumerate(splits_dict)}
+    else:
+        return splits_dict[split_type]
