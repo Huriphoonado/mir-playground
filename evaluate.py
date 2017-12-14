@@ -41,6 +41,11 @@ def evaluate_model_voicing(test_guesses, test_labels):
     return metrics
 
 
+def evaluate_model_melody(test_guesses, test_labels):
+    print('Melody eval not yet implemented')
+    return False
+
+
 def evaluate_model_all(test_guesses, test_labels):
     '''
         Run standard Mirex evaluations on all test data
@@ -100,8 +105,9 @@ def generate_eval(mode):
         Output: Evaluation function corresponding to input
     '''
     evaluations = {
-        'all': evaluate_model_all,
-        'voicing': evaluate_model_voicing
+        'voicing': evaluate_model_voicing,
+        'melody': evaluate_model_melody,
+        'all': evaluate_model_all
     }
 
     return evaluations[mode]

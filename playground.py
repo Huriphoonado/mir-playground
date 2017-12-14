@@ -6,53 +6,25 @@ from multiprocessing import Pool  # For parallel processing
 
 import numpy as np  # For numerous calculations
 
-from sklearn import svm
+from sklearn import svm  # Machine learning algorithms
 from sklearn.ensemble import RandomForestClassifier
 
-import librosa
-import librosa.display
-
-import medleydb as mdb
+import librosa  # Audio processing and data conversions
 
 # Functions that we have written
-import features
-import helpers as hr
-import exporter
-import evaluate
+import split  # For splitting train/validation/test
+import features  # Feature transformation methods
+import helpers as hr  # Useful helper functions
+import exporter  # For exporting data to JSON
+import evaluate  # Final step evaluation functions
 
 
 # ----------------- Global Variables
 num_processes = 4  # Number of parallel processes for supported code blocks
-global_mode = 'voicing'  # ['voicing' | 'melody' | 'all']
+global_mode = 'melody'  # ['voicing' | 'melody' | 'all']
 
 
 # ----------------- Functions
-def generate_train_and_test_data(size, test_mode=False):
-    '''
-        Creates all of the training and test data that we will need
-        Inputs:
-            Float ranging from 0 to 1 referring to how to split data up
-            Boolean when set to True will only run on 3 audio files
-        Outputs:
-            train: List of multitrack objects to be used for training
-            test: List of multitrack objects to be used for testing
-    '''
-    if test_mode:
-        train = [mdb.MultiTrack('MusicDelta_Reggae'),
-                 mdb.MultiTrack('MusicDelta_Rockabilly')]
-        test = [mdb.MultiTrack('MusicDelta_Shadows')]
-        return train, test
-
-    generator = mdb.load_melody_multitracks()
-    melody_ids = [mtrack.track_id for mtrack in generator]
-    splits = mdb.utils.artist_conditional_split(trackid_list=melody_ids,
-                                                test_size=size, num_splits=1)
-
-    train = [mdb.MultiTrack(t_id) for t_id in splits[0]['train']]
-    test = [mdb.MultiTrack(t_id) for t_id in splits[0]['test']]
-    return train, test
-
-
 def normalize_all(n_func, train_or_test):
     '''
         Iterates through all provided data and normalizes each mtrack
@@ -69,7 +41,6 @@ def normalize_all(n_func, train_or_test):
     return feature_dict
 
 
-# Post processing - Subtract min and divide by max
 def load_and_normalize(n_func, mtrack):
     '''
         Loads the selected audio file and runs normalization on it
@@ -91,7 +62,7 @@ def load_and_normalize(n_func, mtrack):
     annotation = list(annotation)
     times = list(times)
 
-    normalized = n_func(y)
+    normalized = n_func(y)  # Transform to feature representation
 
     if len(normalized) != len(annotation):
         if len(normalized) - len(annotation) == 1:
@@ -105,18 +76,35 @@ def load_and_normalize(n_func, mtrack):
             print(t_id, 'features has size:', len(normalized))
             quit()
 
-    if global_mode == 'all':
-        annotation = hr.hz_to_note_zeros(annotation)
-    elif global_mode == 'voicing':
+    if global_mode == 'voicing':
         annotation = np.array([int(bool(v)) for v in annotation])
-    else:  # If just melody, this will take a little bit more work
+    else:
         annotation = hr.hz_to_note_zeros(annotation)
 
-    # annotation = hr.hz_to_note_zeros(annotation)
+    # count unique pitches/voicings
+    class_counts = hr.count_pitches(annotation)
 
     print('Normalized', t_id, 'with', len(normalized), 'feature vectors')
     return {'t_id': t_id, 'features': normalized,
-            'labels': annotation, 'times': times}
+            'labels': annotation, 'times': times,
+            'class_counts': class_counts}
+
+
+def only_voiced_frames(data, to_remove=['0']):
+    '''
+        Mainly used by the melody mode classification to hold voiced frames
+        Inputs:
+            List of dicts containing all train or test data
+            List of pitches too rare to classify in addition to 0
+        Outputs:
+            Modified data list where undesirable frames/times/classes are
+            cut out
+    '''
+    arg_list = [(track, to_remove) for track in data]
+    with Pool(processes=num_processes) as pool:
+        updated_tracks = pool.starmap(hr.keep_some_frames, arg_list)
+
+    return updated_tracks
 
 
 def train_model_svm(train_features, train_labels):
@@ -137,7 +125,6 @@ def train_model_forest(train_features, train_labels):
     clf = RandomForestClassifier(max_depth=4, random_state=0,
                                  n_jobs=num_processes)
     clf.fit(train_features, train_labels)
-    print(clf.n_classes_)
     return clf
 
 
@@ -158,11 +145,22 @@ def predict(clf, all_test_data):
 # ----------------- Main Function
 def main():
     n_func = features.transform('stft')  # Choose your weapon!
-    train, test = generate_train_and_test_data(0.15, test_mode=True)
+    s_func = split.generate_split('quick')
+    e_func = evaluate.generate_eval(global_mode)
+
+    print('Splitting Train and Test Sets..........', end='')
+    train, test = s_func()
+    print('Done')
 
     print('Extracting Training Features..........')
     all_training_data = normalize_all(n_func, train)
+    to_remove, train_counts = hr.common_pitches(all_training_data, 50)
     print('Extracting Training Features..........Done')
+
+    if global_mode == 'melody':
+        print('Removing Unvoiced Frames From Train..........', end='')
+        all_training_data = only_voiced_frames(all_training_data, to_remove)
+        print('Done')
 
     print('Training  Model..........')
     train_features = hr.concat(all_training_data, 'features')
@@ -173,6 +171,11 @@ def main():
     print('Extracting Test Features..........')
     all_test_data = normalize_all(n_func, test)
     print('Extracting Test Features..........Done')
+
+    if global_mode == 'melody':
+        print('Removing Unvoiced Frames From Test..........', end='')
+        all_test_data = only_voiced_frames(all_test_data)
+        print('Done')
 
     print('Making Predictions..........', end='')
     predictions = predict(clf, all_test_data)
@@ -185,8 +188,7 @@ def main():
     print('Evaluating Results..........')
     test_guesses = hr.concat(predictions, 'guesses')
     test_labels = hr.concat(predictions, 'labels')
-    ev = evaluate.generate_eval(global_mode)
-    ev(test_guesses, test_labels)
+    e_func(test_guesses, test_labels)
     print('Evaluating Results..........Done')
 
 

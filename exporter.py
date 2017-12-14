@@ -19,9 +19,9 @@ def predictions(all_test_data, mode):  # Add Unique Title Info!
     copy = []
     for d in all_test_data:
         new_d = {}
-        if mode != 'voicing':  # Convert Note Names to Frequencies
-            new_d['labels'] = (hr.note_to_hz_zeros(d['labels'])).tolist()
-            new_d['guesses'] = hr.note_to_hz_zeros(d['guesses']).tolist()
+        if mode != 'voicing':  # Convert Note Names to MIDI vals for plotting
+            new_d['labels'] = (hr.note_to_midi_zeros(d['labels'])).tolist()
+            new_d['guesses'] = hr.note_to_midi_zeros(d['guesses']).tolist()
         else:
             new_d['labels'] = d['labels'].tolist()
             new_d['guesses'] = d['guesses'].tolist()
@@ -32,3 +32,11 @@ def predictions(all_test_data, mode):  # Add Unique Title Info!
 
     with open('predict.json', 'w') as file:
         json.dump(copy, file)
+
+
+def train_test(train_test_data, train_test_name):
+    '''
+        Simply writes train/test split to a dictionary stored in melody
+    '''
+    with open(train_test_name, 'w') as file:
+        json.dump(train_test_data, file)
