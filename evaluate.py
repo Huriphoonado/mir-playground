@@ -7,6 +7,7 @@
 
 # ----------------- Imports
 from mir_eval import melody as mel_eval
+import numpy as np
 import helpers as hr
 
 
@@ -26,9 +27,8 @@ def evaluate_model_voicing(test_guesses, test_labels):
     vx_recall, vx_false_alarm = mel_eval.voicing_measures(ref_voicing,
                                                           est_voicing)
     print('Evaluating overall accuracy...')
-    overall_accuracy = mel_eval.overall_accuracy(ref_voicing, test_labels,
-                                                 est_voicing, test_guesses,
-                                                 cent_tolerance=50)
+    correct_tries = (ref_voicing == est_voicing)
+    overall_accuracy = sum(correct_tries)/correct_tries.size
 
     metrics = {
         'vx_recall': vx_recall,
@@ -42,8 +42,32 @@ def evaluate_model_voicing(test_guesses, test_labels):
 
 
 def evaluate_model_melody(test_guesses, test_labels):
-    print('Melody eval not yet implemented')
-    return False
+    ref_freq = hr.note_to_hz_zeros(test_labels)
+    est_freq = hr.note_to_hz_zeros(test_guesses)
+
+    ref_cent = mel_eval.hz2cents(ref_freq)
+    est_cent = mel_eval.hz2cents(est_freq)
+
+    all_voiced = np.ones(len(ref_cent), dtype=bool)
+
+    print('Evaluating pitch...')
+    raw_pitch = mel_eval.raw_pitch_accuracy(all_voiced, ref_cent,
+                                            all_voiced, est_cent,
+                                            cent_tolerance=50)
+
+    print('Evaluating chroma...')
+    raw_chroma = mel_eval.raw_chroma_accuracy(all_voiced, ref_cent,
+                                              all_voiced, est_cent,
+                                              cent_tolerance=50)
+    metrics = {
+        'raw_pitch': raw_pitch,
+        'raw_chroma': raw_chroma,
+    }
+
+    for m, v in metrics.items():
+        print(m, ':', v)
+
+    return metrics
 
 
 def evaluate_model_all(test_guesses, test_labels):

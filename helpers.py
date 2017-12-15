@@ -130,6 +130,14 @@ def concat(data, feature_type):
     return all_data
 
 
+def make_output_name(e, n, s):
+    '''
+        Creates a JSON output file name simply by concatenating the three
+        modes set by the user at the start of the program
+    '''
+    return 'predict_' + e + '_' + n + '_' + s + '.json'
+
+
 def count_pitches(annotation):
     '''
         Counts the unique classes in an annotation
@@ -191,9 +199,15 @@ def keep_some_frames(track_dict, to_remove):
     return track_dict
 
 
+# TODO - Make the ordering of the input list stay constant
 def input_string(prompt_type, options_dict):
     '''
-        Creates a string for user input
+        Generates a string to print prompting for user input
+        Inputs:
+            String to indicate what the user is being asked for
+            Dict containing numbered options
+        Outputs:
+            String which will be printed to the console
     '''
     i_string = 'Please choose a(n) ' + prompt_type + ' mode: \n'
     for k, v in options_dict.items():

@@ -6,7 +6,7 @@ import helpers as hr
 
 
 # ----------------- Types of Data to Export
-def predictions(all_test_data, mode):  # Add Unique Title Info!
+def predictions(all_test_data, mode, file_name):
     '''
         Exports the predictions dict into a json file so that results
         be loaded and graphed in another program

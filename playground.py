@@ -1,12 +1,15 @@
 # Willie Payne
+# Ana Elisa Mendez Mendez
 # Run Command: python3 playground.py
 
+# Results for stft voicing
+# overall_accuracy : 0.625938592636
+# vx_false_alarm  : 0.467486153724
+# vx_recall : 0.712007194773
+
 # TODO
-# Implement CLI
-#   List Feature for generator functions
 # Add other functions to features.py and test
-# Implement
-# Check if voicing overall evaluation is actually accurate
+# Add docstrings to features and ml algorithms that are missing them
 
 # ----------------- Imports
 from multiprocessing import Pool  # For parallel processing
@@ -35,8 +38,15 @@ s_mode = 'quick'  # Type of train/test/validate split to use
 
 # ----------------- Functions
 def get_started():
-    global e_mode  # Only time global keyword is used since these
-    global n_mode
+    '''
+        Asks for user input for three categories: evaluation, feature, split.
+        This should be the first function ran since it sets the chain of events
+        by which the software follows.
+        Input: None
+        Output: None, Updates three global variables
+    '''
+    global e_mode  # Only time global keyword is used since these should be
+    global n_mode  # known across the entirety of the program
     global s_mode
 
     e_options = evaluate.generate_eval('options')
@@ -48,9 +58,9 @@ def get_started():
     s_choice = input(hr.input_string('split', s_options))
 
     try:
-        e_mode = e_options.get(int(e_choice), 'voicing')
-        n_mode = n_options.get(int(n_choice), 'stft')
-        s_mode = s_options.get(int(s_choice), 'quick')
+        e_mode = e_options.get(int(e_choice), e_mode)
+        n_mode = n_options.get(int(n_choice), n_mode)
+        s_mode = s_options.get(int(s_choice), s_mode)
     except:
         print('Oops, you must have typed something weird. Try running again.')
         quit()
@@ -153,7 +163,7 @@ def train_model_svm(train_features, train_labels):
 
 
 def train_model_forest(train_features, train_labels):
-    clf = RandomForestClassifier(max_depth=4, random_state=0,
+    clf = RandomForestClassifier(max_depth=100, random_state=0,
                                  n_jobs=num_processes)
     clf.fit(train_features, train_labels)
     return clf
@@ -179,6 +189,10 @@ def main():
     e_func = evaluate.generate_eval(e_mode)
     n_func = features.generate_transform(n_mode)
     s_func = split.generate_split(s_mode)
+
+    print('You chose to evaluate', e_mode, 'training with', n_mode,
+          'using', s_mode, 'data')
+    print('Here we go!')
 
     print('Splitting Train and Test Sets..........', end='')
     train, test = s_func()
@@ -213,9 +227,10 @@ def main():
     predictions = predict(clf, all_test_data)
     print('Done')
 
-    print('Exporting Predictions..........', end='')
-    exporter.predictions(all_test_data, e_mode)
-    print('Done')
+    print('Exporting Predictions..........')
+    f_name = hr.make_output_name(e_mode, n_mode, s_mode)
+    exporter.predictions(all_test_data, e_mode, f_name)
+    print('Done: Exported file as', f_name)
 
     print('Evaluating Results..........')
     test_guesses = hr.concat(predictions, 'guesses')
