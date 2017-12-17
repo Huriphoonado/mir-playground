@@ -42,6 +42,14 @@ def evaluate_model_voicing(test_guesses, test_labels):
 
 
 def evaluate_model_melody(test_guesses, test_labels):
+    '''
+        Run standard pitch and chroma evaluations on all test data
+        Inputs:
+            1d np.array containing all predictions made by the model
+            1d np.array containing all ground truth labels
+        Outputs:
+            Dict holding results of all evaluations
+    '''
     ref_freq = hr.note_to_hz_zeros(test_labels)
     est_freq = hr.note_to_hz_zeros(test_guesses)
 
@@ -122,6 +130,7 @@ def evaluate_model_all(test_guesses, test_labels):
     return metrics
 
 
+# ----------------- Function Generator
 def generate_eval(mode):
     '''
         Returns the right evaluation function based on the string inputted

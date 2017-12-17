@@ -1,0 +1,29 @@
+Melody
+    STFT
+        raw_pitch : 0.328929594009
+        raw_chroma : 0.429300345055
+    Cube_Root
+        raw_pitch : 0.325552455767
+        raw_chroma : 0.427097863593
+    Autocorrelation
+        raw_pitch : 0.186594229499
+        raw_chroma : 0.300025695617
+    Cepstrum
+    Salience
+        raw_pitch : 0.293605462154
+        raw_chroma : 0.453623082006
+Voicing
+    STFT
+        vx_recall : 0.712007194773
+        vx_false_alarm  : 0.467486153724
+        overall_accuracy : 0.625938592636
+    Cube_Root
+        vx_recall : 0.7111445562
+        vx_false_alarm  : 0.466741044746
+        overall_accuracy : 0.625846882822
+    Autocorrelation
+    Cepstrum
+    Salience
+        vx_recall : 0.647074370457
+        vx_false_alarm  : 0.424799776866
+        overall_accuracy : 0.612610099543

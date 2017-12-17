@@ -1,8 +1,9 @@
-# Any exports done to memory contained in this program
+# Any exports done to memory contained in this file
 
 # ----------------- Imports
 import json
 import helpers as hr
+import os
 
 
 # ----------------- Types of Data to Export
@@ -30,13 +31,23 @@ def predictions(all_test_data, mode, file_name):
         new_d['times'] = d['times']
         copy.append(new_d)
 
-    with open('predict.json', 'w') as file:
+    # Predictions written to a results directory, so make it if one does not
+    # yet exist
+    if not os.path.exists('results'):
+        os.makedirs('results')
+
+    with open(file_name, 'w') as file:
         json.dump(copy, file)
 
 
 def train_test(train_test_data, train_test_name):
     '''
         Simply writes train/test split to a dictionary stored in melody
+        Inputs:
+            Dict containing the train/test split
+            Name to write the file as (Should be based on the task)
+        Output:
+            JSON File
     '''
     with open(train_test_name, 'w') as file:
         json.dump(train_test_data, file)

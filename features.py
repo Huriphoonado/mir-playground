@@ -1,4 +1,8 @@
 # Possible Feature Representations to convert input audio
+# Style Note: Feature Representations meant to be called by user should begin
+# with 'with_' and should end with a call to 'final_steps'
+# Once a feature representation is ready, add it to the dict created in the
+# generator function and it will be accessible to the user
 
 # TODO - Figure out how to make final_steps a higher order function to
 # reduce code duplication for functions below that have the same steps (stft)
@@ -6,7 +10,10 @@
 # ----------------- Imports
 import numpy as np
 import librosa
-import scipy
+
+from scipy.fftpack import fft
+from scipy.fftpack import ifft
+
 
 # ----------------- Global Variables
 target_sr = 22050  # Lower this if you decide to downsample
@@ -19,6 +26,10 @@ window = 'hann'
 
 # ----------------- Transformation Functions
 def with_stft(y):
+    '''
+        Input: Audio file
+        Output: 2d np.Array of size (time_points, num_features)
+    '''
     s_array = librosa.stft(y, n_fft=n_fft, hop_length=hop_length,
                            win_length=win_length, window=window)
 
@@ -27,6 +38,10 @@ def with_stft(y):
 
 
 def with_cube_root(y):
+    '''
+        Input: Audio file
+        Output: 2d np.Array of size (time_points, num_features)
+    '''
     s_array = librosa.stft(y, n_fft=n_fft, hop_length=hop_length,
                            win_length=win_length, window=window)
 
@@ -35,22 +50,11 @@ def with_cube_root(y):
     return final_steps(cbrt)
 
 
-def stft_no_loss(y):
-    stft = np.zeros((win_length, int(np.ceil(len(y)/hop_length)+1)))
-    stft = stft+0j
-
-    y = np.pad(y, int(n_fft / 2), mode='reflect')
-    stft_buffer = librosa.util.frame(y, frame_length=win_length,
-                                     hop_length=hop_length)
-
-    for i in range(stft_buffer.shape[1]):
-        stft[:, i] = scipy.fftpack.fft(stft_buffer[:, i], n_fft)
-
-    print(stft.shape)
-    return stft
-
-
 def with_autocorrelation(y):
+    '''
+        Input: Audio file
+        Output: 2d np.Array of size (time_points, num_features)
+    '''
     min_lag = 15
     max_lag = 800
 
@@ -64,32 +68,47 @@ def with_autocorrelation(y):
     acf = np.zeros(stft.shape)
     acf = acf + 0j
     for i in range(stft.shape[1]):
-        acf[:, i] = scipy.fftpack.ifft(np.power(np.absolute(stft[:, i]), 2))
+        acf[:, i] = ifft(np.power(np.absolute(stft[:, i]), 2))
 
     acf = np.real(acf)
 
     acf = acf[min_lag:max_lag+1, :]
 
-    acf = N_l*acf
+    acf = N_l * acf
 
     return final_steps(acf)
 
 
 # TODO - Fix divide by zero error, occurs when taking the log of 0
 def with_cepstrum(y):
+    '''
+        Ceptstrum may be computed as the following:
+            FT -> abs() -> log() -> IFT -> real()
+        Input: Audio file
+        Output: 2d np.Array of size (time_points, num_features)
+    '''
     stft = stft_no_loss(y)
+    # stft = librosa.stft(y, n_fft=n_fft, hop_length=hop_length,
+    # win_length=win_length, window=window)
+    abs_stft = np.absolute(stft)
 
-    cepstrum = np.zeros(stft.shape)
-    cepstrum = cepstrum + 0j
+    # Prevents divide-by-zero, but breaks everything??
+    abs_stft[abs_stft == 0] = 0.00001
 
-    for i in range(stft.shape[1]):
-        cepstrum[:, i] = scipy.fftpack.ifft(np.log10(np.absolute(stft[:, i])))
+    log_stft = np.log10(abs_stft)
 
-    cepstrum = np.real(cepstrum)
+    i_log_stft = ifft(log_stft, axis=0)
+
+    cepstrum = np.real(i_log_stft)
+
     return final_steps(cepstrum)
 
 
 def with_salience(y):
+    '''
+        Input: Audio file
+        Output: 2d np.Array of size (time_points, num_features)
+    '''
     s_array = librosa.stft(y, n_fft=n_fft, hop_length=hop_length,
                            win_length=win_length, window=window)
     s_array = np.abs(s_array)
@@ -97,8 +116,27 @@ def with_salience(y):
     h_range = [0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
     salience = librosa.salience(s_array, freqs, h_range)
+    salience[np.isnan(salience)] = 0
 
     return final_steps(salience)
+
+
+def stft_no_loss(y):
+    '''
+        Input: Audio file
+        Output: 2d np.Array of size (num_features, time_points)
+    '''
+    stft = np.zeros((win_length, int(np.ceil(len(y)/hop_length)+1)))
+    stft = stft+0j
+
+    y = np.pad(y, int(n_fft / 2), mode='reflect')
+    stft_buffer = librosa.util.frame(y, frame_length=win_length,
+                                     hop_length=hop_length)
+
+    for i in range(stft_buffer.shape[1]):
+        stft[:, i] = fft(stft_buffer[:, i], n_fft)
+
+    return stft
 
 
 def final_steps(s):
@@ -124,7 +162,7 @@ def generate_transform(type):
         Returns the right transform function based on the string inputted
         If the string 'options' is inputted, it will return a dict containing
         modes rather than a function
-        Input: String containing ['options' | 'voicing' | 'melody' | 'all']
+        Input: String transformation options or 'list'
         Output: Either:
             Transform function corresponding to input
             Dict containing possible transformation functions for user input
@@ -133,6 +171,7 @@ def generate_transform(type):
         'stft': with_stft,
         'cube_root': with_cube_root,
         'autocorr': with_autocorrelation,
+        'cepstrum': with_cepstrum,
         'salience': with_salience
     }
 

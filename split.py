@@ -100,7 +100,7 @@ def make_test_data():
     print('Generated Train/Test Data Split!')
 
 
-# ----------------- Generator Function
+# ----------------- Function Generator
 def generate_split(split_type):
     '''
         Returns the right split function based on the string inputted

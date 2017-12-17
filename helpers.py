@@ -110,6 +110,8 @@ def midi_to_note_zeros(annotation):
     return new_values
 
 
+# TODO - Turns out, this implementation is wildly time-consuming
+# Is there a better implementation to speed things up??
 def concat(data, feature_type):
     '''
     Concatenates all track information into one np.array to be used for model
@@ -135,7 +137,7 @@ def make_output_name(e, n, s):
         Creates a JSON output file name simply by concatenating the three
         modes set by the user at the start of the program
     '''
-    return 'predict_' + e + '_' + n + '_' + s + '.json'
+    return 'results/' + 'predict_' + e + '_' + n + '_' + s + '.json'
 
 
 def count_pitches(annotation):

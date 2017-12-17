@@ -2,13 +2,7 @@
 # Ana Elisa Mendez Mendez
 # Run Command: python3 playground.py
 
-# Results for stft voicing
-# overall_accuracy : 0.625938592636
-# vx_false_alarm  : 0.467486153724
-# vx_recall : 0.712007194773
-
 # TODO
-# Add other functions to features.py and test
 # Add docstrings to features and ml algorithms that are missing them
 
 # ----------------- Imports
@@ -208,9 +202,12 @@ def main():
         all_training_data = only_voiced_frames(all_training_data, to_remove)
         print('Done')
 
-    print('Training  Model..........')
+    print('Concatenating all Feature Vectors..........')
     train_features = hr.concat(all_training_data, 'features')
     train_labels = hr.concat(all_training_data, 'labels')
+    print('Concatenating all Feature Vectors..........Done')
+
+    print('Training  Model..........')
     clf = train_model_forest(train_features, train_labels)
     print('Training  Model..........Done')
 
