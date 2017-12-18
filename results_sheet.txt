@@ -6,9 +6,11 @@ Melody
         raw_pitch : 0.325552455767
         raw_chroma : 0.427097863593
     Autocorrelation
-        raw_pitch : 0.186594229499
-        raw_chroma : 0.300025695617
+        raw_pitch : 0.232240657808
+        raw_chroma : 0.362040231995
     Cepstrum
+        raw_pitch : 0.0
+        raw_chroma : 0.00502272183688    
     Salience
         raw_pitch : 0.293605462154
         raw_chroma : 0.453623082006
@@ -22,7 +24,13 @@ Voicing
         vx_false_alarm  : 0.466741044746
         overall_accuracy : 0.625846882822
     Autocorrelation
+        vx_recall : 0.68766610381
+        vx_false_alarm  : 0.480953898872
+        overall_accuracy : 0.606811364375
     Cepstrum
+        vx_recall : 0.981344176034
+        vx_false_alarm  : 0.996224040277
+        overall_accuracy : 0.712131715771
     Salience
         vx_recall : 0.647074370457
         vx_false_alarm  : 0.424799776866

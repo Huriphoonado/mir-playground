@@ -27,6 +27,7 @@ window = 'hann'
 # ----------------- Transformation Functions
 def with_stft(y):
     '''
+        Runs a short-term Fourier transform
         Input: Audio file
         Output: 2d np.Array of size (time_points, num_features)
     '''
@@ -39,6 +40,7 @@ def with_stft(y):
 
 def with_cube_root(y):
     '''
+        Takes the cube root of the STFT - supposed to model human hearing
         Input: Audio file
         Output: 2d np.Array of size (time_points, num_features)
     '''
@@ -52,11 +54,12 @@ def with_cube_root(y):
 
 def with_autocorrelation(y):
     '''
+        Uses autocorrelation to detect periodic signals
         Input: Audio file
         Output: 2d np.Array of size (time_points, num_features)
     '''
     min_lag = 15
-    max_lag = 800
+    max_lag = 400
 
     N_l = np.array(np.linspace((win_length)-min_lag,
                    win_length-max_lag, max_lag-min_lag+1), ndmin=2)
@@ -79,7 +82,8 @@ def with_autocorrelation(y):
     return final_steps(acf)
 
 
-# TODO - Fix divide by zero error, occurs when taking the log of 0
+# TODO - We have determined that the entire frame contains all zeros
+# Figure out why this funcion is not working
 def with_cepstrum(y):
     '''
         Ceptstrum may be computed as the following:
@@ -88,14 +92,11 @@ def with_cepstrum(y):
         Output: 2d np.Array of size (time_points, num_features)
     '''
     stft = stft_no_loss(y)
-    # stft = librosa.stft(y, n_fft=n_fft, hop_length=hop_length,
-    # win_length=win_length, window=window)
-    abs_stft = np.absolute(stft)
 
-    # Prevents divide-by-zero, but breaks everything??
+    abs_stft = np.absolute(stft)
     abs_stft[abs_stft == 0] = 0.00001
 
-    log_stft = np.log10(abs_stft)
+    log_stft = np.log(abs_stft)
 
     i_log_stft = ifft(log_stft, axis=0)
 
@@ -106,6 +107,7 @@ def with_cepstrum(y):
 
 def with_salience(y):
     '''
+        Measurement of salience (percieved amplitude/energy) over time
         Input: Audio file
         Output: 2d np.Array of size (time_points, num_features)
     '''
@@ -123,6 +125,8 @@ def with_salience(y):
 
 def stft_no_loss(y):
     '''
+        Unlike Librosa, this version of STFT does not remove any redundant
+        information
         Input: Audio file
         Output: 2d np.Array of size (num_features, time_points)
     '''

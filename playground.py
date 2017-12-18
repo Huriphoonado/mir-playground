@@ -2,9 +2,6 @@
 # Ana Elisa Mendez Mendez
 # Run Command: python3 playground.py
 
-# TODO
-# Add docstrings to features and ml algorithms that are missing them
-
 # ----------------- Imports
 from multiprocessing import Pool  # For parallel processing
 
@@ -157,12 +154,21 @@ def train_model_svm(train_features, train_labels):
 
 
 def train_model_forest(train_features, train_labels):
+    '''
+        Runs a Random Forest Classifier to train melody prediction model
+        Inputs:
+            2d np.array containing all feature vectors for each time
+            1d np.array containing labels for all feature vectors*
+            * The length of both lists must be equal
+        Output: A classifier to be used for melody prediction
+    '''
     clf = RandomForestClassifier(max_depth=100, random_state=0,
                                  n_jobs=num_processes)
     clf.fit(train_features, train_labels)
     return clf
 
 
+# TODO - Calculate accuracy per track to evaluate performance across genres
 def predict(clf, all_test_data):
     '''
         Run predictions on all tracks
@@ -207,9 +213,9 @@ def main():
     train_labels = hr.concat(all_training_data, 'labels')
     print('Concatenating all Feature Vectors..........Done')
 
-    print('Training  Model..........')
+    print('Training  Model..........', end='')
     clf = train_model_forest(train_features, train_labels)
-    print('Training  Model..........Done')
+    print('Done')
 
     print('Extracting Test Features..........')
     all_test_data = normalize_all(n_func, test)

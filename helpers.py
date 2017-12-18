@@ -110,8 +110,6 @@ def midi_to_note_zeros(annotation):
     return new_values
 
 
-# TODO - Turns out, this implementation is wildly time-consuming
-# Is there a better implementation to speed things up??
 def concat(data, feature_type):
     '''
     Concatenates all track information into one np.array to be used for model
@@ -120,14 +118,7 @@ def concat(data, feature_type):
         String representing the feature type to concatenate
     Output: 1d or 2d np.array
     '''
-    all_data = False
-
-    for d in data:
-        if type(all_data) is bool:  # Array dimensions set with first vector
-            all_data = d[feature_type]
-        else:
-            all_data = np.concatenate((all_data, d[feature_type]), axis=0)
-
+    all_data = np.concatenate([d[feature_type] for d in data])
     print(feature_type, 'array has shape: ', all_data.shape)
     return all_data
 
